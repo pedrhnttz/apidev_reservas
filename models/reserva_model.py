@@ -1,5 +1,8 @@
 from flask import jsonify
 from config import db
+import requests
+
+main_data = "http://127.0.0.1:5000/api"
 
 class Reserva(db.Model):
     __tablename__ = 'reservas'
@@ -27,3 +30,34 @@ class Reserva(db.Model):
             "hora_inicio":self.hora_inicio,
             "hora_fim":self.hora_fim
         }
+    
+# Classes de exceção
+
+class ReservaNotFound(Exception):
+    def __init__(self):
+        super().__init__({'Reserva não encontrada'})
+
+# Funções de rota
+
+def get_reservas():
+    reservas = Reserva.query.all()
+    return [r.to_dict() for r in reservas]
+
+def get_reserva_by_id(id):
+    reserva = Reserva.query.get(id)
+    if not reserva:
+        raise ReservaNotFound
+    return reserva.to_dict()
+
+def validar_turma(id):
+    r = requests.get(f"{main_data}/turmas/{id}")
+    return r.status_code == 200
+
+def create_reserva():
+    pass
+
+def update_reserva():
+    pass
+
+def delete_reserva():
+    pass
