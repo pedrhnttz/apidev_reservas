@@ -1,16 +1,16 @@
 from flask import Blueprint, request, jsonify
-from reserva_model import Reserva
-from database import db
+from models.reserva_model import Reserva
+from config import db
 import requests
 
-routes = Blueprint("routes", __name__)
+routes_bp = Blueprint("routes", __name__)
 
 
 def validar_turma(turma_id):
     resp = requests.get(f"http://localhost:5000/api/turmas/{turma_id}")
     return resp.status_code == 200
 
-@routes.route("/reservas", methods=["POST"])
+@routes_bp.route("/reservas", methods=["POST"])
 def criar_reserva():
     dados = request.json
     turma_id = dados.get("turma_id")
@@ -31,7 +31,7 @@ def criar_reserva():
 
     return jsonify({"mensagem": "Reserva criada com sucesso"}), 201
 
-@routes.route("/reservas", methods=["GET"])
+@routes_bp.route("/reservas", methods=["GET"])
 def listar_reservas():
     reservas = Reserva.query.all()
     return jsonify([
