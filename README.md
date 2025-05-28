@@ -1,5 +1,3 @@
-Perfeito! O conteúdo completo que geramos está pronto para ser colocado no seu arquivo README.md.
-
 API de Reservas de Sala
 Esta API é um microsserviço responsável por gerenciar reservas de salas, dependendo da execução de outra API para seu funcionamento completo. Ela permite criar novas reservas, consultar todas as reservas existentes, buscar uma reserva específica por ID, atualizar reservas existentes e excluir reservas.
 
