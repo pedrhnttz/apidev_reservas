@@ -24,3 +24,20 @@ def createReserva():
         return jsonify(reserva)
     except Exception as e:
         return jsonify({'erro': str(e)})
+    
+@reservas_bp.route('/reservas/<int:id>', methods=['PUT'])
+def updateReserva(id):
+    try:
+        dados_up = request.get_json()
+        reserva_up = update_reserva(id, dados_up)
+        return jsonify(reserva_up), 200
+    except Exception as e:
+        return jsonify({'erro': str(e)})
+
+@reservas_bp.route('/reservas/<int:id>', methods=['DELETE'])
+def deleteReserva(id):
+    try:
+        reserva_rm = delete_reserva(id)
+        return jsonify(reserva_rm)
+    except Exception as e:
+        return jsonify({'erro': str(e)})
