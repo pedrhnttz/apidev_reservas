@@ -1,9 +1,8 @@
 from config import app, db
-from controllers.reserva_route import reserva_bp
+from controllers.reserva_route import reservas_bp
 
-app.register_blueprint(reserva_bp)
+app.register_blueprint(reservas_bp)
 
-db.init_app(app)
 with app.app_context():
     db.create_all()
 
