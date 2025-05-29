@@ -58,6 +58,15 @@ def create_reserva(reserva):
     reserva_data = reserva.get('data')
     data_obj = datetime.strptime(reserva_data, "%Y-%m-%d").date()
 
+    is_overlap_free, overlap_error_msg = validar_overlap(
+            reserva_data.get('sala'),
+            data_obj, # Passa o objeto date já convertido
+            reserva_data.get('hora_inicio'),
+            reserva_data.get('hora_fim')
+        )
+    if not is_overlap_free:
+            return None, overlap_error_msg
+
     nova_reserva = Reserva(
         turma_id = reserva.get('turma_id'),
         sala = reserva.get('sala'),
@@ -68,6 +77,7 @@ def create_reserva(reserva):
 
     db.session.add(nova_reserva)
     db.session.commit()
+    return nova_reserva, None
 
 def update_reserva():
     pass
@@ -130,3 +140,20 @@ def validar_hora(hora_inicio, hora_fim, formato="%H:%M"):
         return False, "A 'Hora de início' deve ser anterior à 'Hora de término'."
     return True, None
 
+def validar_overlap(sala, data_reserva_obj, hora_inicio_str, hora_fim_str):
+    nova_hora_inicio = datetime.strptime(hora_inicio_str, "%H:%M").time()
+    nova_hora_fim = datetime.strptime(hora_fim_str, "%H:%M").time()
+
+    existing_reservas = db.session.query(Reserva).filter(
+        Reserva.sala == sala,
+        Reserva.data == data_reserva_obj
+    ).all()
+
+    for existing_reserva in existing_reservas:
+        existente_hora_inicio = datetime.strptime(existing_reserva.hora_inicio, "%H:%M").time()
+        existente_hora_fim = datetime.strptime(existing_reserva.hora_fim, "%H:%M").time()
+        if (nova_hora_inicio < existente_hora_fim) and \
+           (nova_hora_fim > existente_hora_inicio):
+            return False, f"A sala '{sala}' já está reservada das {existing_reserva.hora_inicio} às {existing_reserva.hora_fim} nesta data."
+
+    return True, None
