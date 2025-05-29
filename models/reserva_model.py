@@ -55,22 +55,19 @@ def create_reserva(reserva):
     if not is_valid:
         return jsonify({'erro': error_msg}), 400
     
-    reserva_data = reserva.get('data')
-    data_obj = datetime.strptime(reserva_data, "%Y-%m-%d").date()
-
     is_overlap_free, overlap_error_msg = validar_overlap(
-            reserva_data.get('sala'),
-            data_obj, # Passa o objeto date já convertido
-            reserva_data.get('hora_inicio'),
-            reserva_data.get('hora_fim')
+            reserva.get('sala'),
+            reserva.get('data'),
+            reserva.get('hora_inicio'),
+            reserva.get('hora_fim')
         )
     if not is_overlap_free:
-            return None, overlap_error_msg
+        return jsonify({'erro': overlap_error_msg}), 400
 
     nova_reserva = Reserva(
         turma_id = reserva.get('turma_id'),
         sala = reserva.get('sala'),
-        data = data_obj,
+        data = reserva.get('data'),
         hora_inicio = reserva.get('hora_inicio'),
         hora_fim = reserva.get('hora_fim')
     )
@@ -79,11 +76,36 @@ def create_reserva(reserva):
     db.session.commit()
     return nova_reserva, None
 
-def update_reserva():
-    pass
-
-def delete_reserva():
-    pass
+def update_reserva(reserva_id, reserva_up):
+    reserva = Reserva.query.get(reserva_id)
+    is_valid, error_msg = validar_update(reserva_up)
+    if not is_valid:
+        return jsonify({'erro': error_msg}), 400
+    
+    is_overlap_free, overlap_error_msg = validar_overlap(
+            reserva_up.get('sala'),
+            reserva_up.get('data'),
+            reserva_up.get('hora_inicio'),
+            reserva_up.get('hora_fim')
+        )
+    if not is_overlap_free:
+        return jsonify({'erro': overlap_error_msg}), 400
+    
+    reserva.turma_id = reserva_up['turma_id']
+    reserva.sala = reserva_up['sala']
+    reserva.data = reserva_up['data']
+    reserva.hora_inicio = reserva_up['data_inicio']
+    reserva.hora_fim = reserva_up['hora_fim']
+    db.session.commit()
+    return {'msg': 'Reserva atualizada!'}
+    
+def delete_reserva(reserva_id):
+    reserva = Reserva.query.get(reserva_id)
+    if not reserva:
+        raise Exception('Não foi possível deletar a reserva')
+    db.session.delete(reserva)
+    db.session.commit()
+    return {"msg":"reserva deletada"}
 
 # Funções secundárias
 
@@ -140,7 +162,8 @@ def validar_hora(hora_inicio, hora_fim, formato="%H:%M"):
         return False, "A 'Hora de início' deve ser anterior à 'Hora de término'."
     return True, None
 
-def validar_overlap(sala, data_reserva_obj, hora_inicio_str, hora_fim_str):
+def validar_overlap(sala, data_reserva_str, hora_inicio_str, hora_fim_str):
+    data_reserva_obj = datetime.strptime(data_reserva_str, "%Y-%m-%d").date()
     nova_hora_inicio = datetime.strptime(hora_inicio_str, "%H:%M").time()
     nova_hora_fim = datetime.strptime(hora_fim_str, "%H:%M").time()
 
@@ -156,4 +179,21 @@ def validar_overlap(sala, data_reserva_obj, hora_inicio_str, hora_fim_str):
            (nova_hora_fim > existente_hora_inicio):
             return False, f"A sala '{sala}' já está reservada das {existing_reserva.hora_inicio} às {existing_reserva.hora_fim} nesta data."
 
+    return True, None
+
+def validar_update(dados):
+    if dados.get('turma_id'):
+        turma_id = dados.get('turma_id')
+        if not validar_turma(turma_id):
+            return False, f'Turma não encontrada.'
+    if dados.get('data'):
+        data_reserva = dados.get('data')
+        if not validar_data(data_reserva):
+            return False, "O campo 'Data' possui um formato inválido. Use AAAA-MM-DD."
+    if dados.get('hora_inicio') or dados.get('hora_fim'):
+        hora_inicio = dados.get('hora_inicio')
+        hora_fim = dados.get('hora_fim')
+        is_horas_valid, horas_error_msg = validar_hora(hora_inicio, hora_fim)
+        if not is_horas_valid:
+            return False, horas_error_msg
     return True, None
